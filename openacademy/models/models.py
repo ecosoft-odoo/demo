@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import models, fields, api, exceptions
 from datetime import timedelta
 
@@ -6,16 +5,32 @@ from datetime import timedelta
 class Course(models.Model):
     _name = 'openacademy.course'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-    _description = "OpenAcademy Courses"
+    _description = 'OpenAcademy Courses'
 
-    name = fields.Char(string="Title", required=True, track_visibility='onchange')
-    description = fields.Text(track_visibility='onchange')
-    responsible_id = fields.Many2one('res.users',
-    ondelete='set null', string="Responsible", index=True)
-    create_date = fields.Datetime(string="Create Date", readonly=True)
-    write_date = fields.Datetime(string="Update Date", readonly=True)
+    name = fields.Char(
+        string='Title',
+        required=True,
+        track_visibility='onchange',
+    )
+    description = fields.Text(
+        track_visibility='onchange',
+    )
+    responsible_id = fields.Many2one(
+        comodel_name='res.users',
+        ondelete='set null',
+        string='Responsible',
+        index=True,
+    )
+    create_date = fields.Datetime(
+        string='Create Date',
+        readonly=True)
+    write_date = fields.Datetime(
+        string='Update Date',
+        readonly=True)
     session_ids = fields.One2many(
-        'openacademy.session', 'course_id', string="Sessions")
+        comodel_name='openacademy.session',
+        inverse_name='course_id',
+        string="Sessions")
 
     @api.multi
     def copy(self, default=None):
@@ -46,24 +61,44 @@ class Session(models.Model):
     _name = 'openacademy.session'
     _description = "OpenAcademy Sessions"
 
-    name = fields.Char(required=True)
-    start_date = fields.Date(default=fields.Date.today)
-    duration = fields.Float(digits=(6, 2), help="Duration in days",)
-    seats = fields.Integer(string="Number of seats")
+    name = fields.Char(
+        required=True)
+    start_date = fields.Date(
+        default=fields.Date.today)
+    duration = fields.Float(
+        digits=(6, 2),
+        help='Duration in days',)
+    seats = fields.Integer(string='Number of seats')
     active = fields.Boolean(default=True)
     color = fields.Integer()
-    instructor_id = fields.Many2one('res.partner', string="Instructor",
-    domain=[('instructor', '=', True)])
-    course_id = fields.Many2one('openacademy.course',
-        ondelete='cascade', string="Course", required=True)
-    attendee_ids = fields.Many2many('res.partner', string="Attendees")
-    taken_seats = fields.Float(string="Taken seats", compute='_taken_seats')
-    end_date = fields.Date(string="End Date", store=True,
-        compute='_get_end_date', inverse='_set_end_date')
-    hours = fields.Float(string="Duration in hours",
-                         compute='_get_hours', inverse='_set_hours')
+    instructor_id = fields.Many2one(
+        comodel_name='res.partner',
+        string='Instructor',
+        domain=[('instructor', '=', True)])
+    course_id = fields.Many2one(
+        comodel_name='openacademy.course',
+        ondelete='cascade',
+        string="Course",
+        required=True)
+    attendee_ids = fields.Many2many(
+        'res.partner',
+        string='Attendees')
+    taken_seats = fields.Float(
+        string='Taken seats',
+        compute='_taken_seats')
+    end_date = fields.Date(
+        string='End Date',
+        store=True,
+        compute='_get_end_date',
+        inverse='_set_end_date')
+    hours = fields.Float(
+        string='Duration in hours',
+        compute='_get_hours',
+        inverse='_set_hours')
     attendees_count = fields.Integer(
-        string="Attendees count", compute='_get_attendees_count', store=True)
+        string='Attendees count',
+        compute='_get_attendees_count',
+        store=True)
 
     @api.depends('seats', 'attendee_ids')
     def _taken_seats(self):
@@ -79,7 +114,6 @@ class Session(models.Model):
             if not (r.start_date and r.duration):
                 r.end_date = r.start_date
                 continue
-
             # Add duration to start_date, but: Monday + 5 days = Saturday, so
             # subtract one second to get on Friday instead
             duration = timedelta(days=r.duration, seconds=-1)
@@ -89,7 +123,6 @@ class Session(models.Model):
         for r in self:
             if not (r.start_date and r.end_date):
                 continue
-
         # Compute the difference between dates, but: Friday - Monday = 4 days,
         # so add one day to get 5 days instead
             r.duration = (r.end_date - r.start_date).days + 1
@@ -113,15 +146,19 @@ class Session(models.Model):
         if self.seats < 0:
             return {
                 'warning': {
-                    'title': "Incorrect 'seats' value",
-                    'message': "The number of available seats may not be negative",
+                    'title':
+                    "Incorrect 'seats' value",
+                    'message':
+                    "The number of available seats may not be negative",
                 },
             }
         if self.seats < len(self.attendee_ids):
             return {
                 'warning': {
-                    'title': "Too many attendees",
-                    'message': "Increase seats or remove excess attendees",
+                    'title':
+                    "Too many attendees",
+                    'message':
+                    "Increase seats or remove excess attendees",
                 },
             }
 
@@ -129,4 +166,5 @@ class Session(models.Model):
     def _check_instructor_not_in_attendees(self):
         for r in self:
             if r.instructor_id and r.instructor_id in r.attendee_ids:
-                raise exceptions.ValidationError("A session's instructor can't be an attendee")
+                raise exceptions.ValidationError
+                ("A session's instructor can't be an attendee")
